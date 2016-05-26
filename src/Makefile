@@ -50,6 +50,7 @@ $(RMUTIL):
 
 snowball:
 	$(MAKE) -C dep/snowball libstemmer.o
+
 .c.xo:
 	$(CC) -I. $(CFLAGS) $(SHOBJ_CFLAGS) -fPIC -c $< -o $@
 
@@ -63,7 +64,6 @@ release: util rmutil snowball | module.so
 debug: CFLAGS += $(DEBUGFLAGS)
 debug: util rmutil snowball | module.so
 	
-
 clean:
 	find . -type f -name '*.o' -delete -print
 

@@ -17,6 +17,14 @@ inline int Vector_Size(Vector *v) { return v->top; }
 /* return the actual capacity */
 inline int Vector_Cap(Vector *v) { return v->cap; }
 
+int Vector_Pop(Vector *v, void *ptr) {
+    if (Vector_Get(v, v->top - 1, ptr)) {
+        v->top--;
+        return 1;
+    }
+    return 0;
+}
+
 int Vector_Get(Vector *v, int pos, void *ptr) {
     // return 0 if pos is out of bounds
     if (pos >= v->top) {
