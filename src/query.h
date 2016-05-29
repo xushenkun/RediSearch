@@ -79,7 +79,7 @@ IndexIterator *Query_EvalStage(Query *q, QueryStage *s);
 void QueryStage_Free(QueryStage *s);
 QueryStage *NewTokenStage(Query *q, QueryToken *qt);
 QueryStage *NewLogicStage(QueryOp op);
-QueryStage *NewNumericStage(NumericFilter *flt);
+QueryStage *NewNumericStage(NumericIterator *flt);
 
 
 IndexIterator *query_EvalLoadStage(Query *q, QueryStage *stage);

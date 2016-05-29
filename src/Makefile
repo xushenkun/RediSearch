@@ -15,8 +15,8 @@ CFLAGS= -fPIC -lc -lm -std=gnu99 -I./
 RELEASEFLAGS=-O3
 DEBUGFLAGS=-O0 -g 
 VARINT=varint.o buffer.o
-INDEX=index.o forward_index.o score_index.o skip_index.o numeric_index.o
 TEXT=tokenize.o stemmer.o dep/snowball/libstemmer.o
+INDEX=index.o tokenize.o forward_index.o score_index.o skip_index.o numeric_index.o srtree.o
 REDIS=redis_buffer.o module.o redis_index.o query.o spec.o
 UTILOBJS=util/heap.o util/logging.o
 RMUTILOBJS=rmutil/librmutil.a
