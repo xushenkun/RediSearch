@@ -1,5 +1,5 @@
-#ifndef __BUFFER_H__
-#define __BUFFER_H__
+#ifndef __RS_BUFFER_H__
+#define __RS_BUFFER_H__
 
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +32,7 @@ size_t BufferOffset(Buffer *ctx);
 
 int BufferAtEnd(Buffer *ctx);
 
-typedef struct {
+typedef struct bufferWriter {
     Buffer *buf;    
     size_t (*Write)(Buffer *ctx, void *data, size_t len);
     size_t (*Truncate)(Buffer *ctx, size_t newlen);
