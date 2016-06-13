@@ -7,10 +7,12 @@ DocTreeIterator *DocTree_Iterate(DocNode *n) {
   ret->stack = calloc(ret->cap, sizeof(doctreeIterState));
   ret->stack[0].current = n;
   ret->stack[0].state = 0;
+  ret->currentDocId = n->docId;
   ret->top = 1;
    
   return ret;
 }
+
 
 void dti_push(DocTreeIterator*dti, DocNode *n) {
   if (dti->top == dti->cap) {
@@ -19,6 +21,7 @@ void dti_push(DocTreeIterator*dti, DocNode *n) {
   }
   dti->stack[dti->top].current = n;
   dti->stack[dti->top].state = 0;
+  dti->currentDocId = n->docId;
   dti->top++;
    
 }
@@ -71,6 +74,7 @@ DocNode *DocTreeIterator_Next(DocTreeIterator *it) {
       // pop
       if (it->top > 0) {
         it->top--;
+        it->currentDocId = it->stack[it->top].current->docId;
         return DocTreeIterator_Next(it);
       } 
    }
@@ -197,6 +201,7 @@ void ScoreNode_Add(ScoreNode *n, t_docId docId, float score) {
   while (n && !n->leaf) {
     n = score < n->score ? n->left : n->right;
   }
+
   ////printf("Adding to leaf %f..%f\n", n->leaf->min, n->leaf->max);
   Leaf_Add(n->leaf, docId, score);
 
@@ -263,6 +268,7 @@ Vector *ScoreNode_FindRange(ScoreNode *n, float min, float max) {
   }
 
   Vector_Free(stack);
+
 
   //printf("found %d leaves\n", Vector_Size(leaves));
   return leaves;

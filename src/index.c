@@ -46,7 +46,6 @@ inline int IR_GenericRead(IndexReader *ir, t_docId *docId, float *freq, u_char *
 }
 
 
-
 inline int IR_TryRead(IndexReader *ir, t_docId *docId, t_docId expectedDocId) {
   if (!IR_HasNext(ir)) {
     return INDEXREAD_EOF;

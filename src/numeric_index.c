@@ -69,11 +69,11 @@ NumericFilter *NewNumericFilter(double min, double max,
     return f;
 }
 
-/* qsort docId comparison function */ 
-int cmp_docId(const void *a, const void *b) 
-{ 
-    return *(const int *)a - *(const int *)b; // casting pointer types 
-} 
+// /* qsort docId comparison function */ 
+// int cmp_docId(const void *a, const void *b) 
+// { 
+//     return (int)*(const t_docId *)a - (int)*(const t_docId *)b; // casting pointer types 
+// } 
  
 
 int _numericIndex_LoadIndex(NumericIndex *idx) {
@@ -329,10 +329,10 @@ void NumericIterator_Free(struct indexIterator *self) {
 static int cmpDocIds(const void *e1, const void *e2, const void *udata) {
   const DocTreeIterator *d1 = e1, *d2 = e2;
   
-  DocNode *n1 = DocTreeIterator_Current((DocTreeIterator *)d1);
-  DocNode *n2 = DocTreeIterator_Current((DocTreeIterator *)d2);
+//   DocNode *n1 = DocTreeIterator_Current((DocTreeIterator *)d1);
+//   DocNode *n2 = DocTreeIterator_Current((DocTreeIterator *)d2);
   
-  return n1->docId - n2->docId;
+  return (int)d2->currentDocId - (int)d1->currentDocId;
   
 }
 
@@ -375,16 +375,18 @@ DocNode *__numericIterator_Next(NumericIterator *it) {
   }
   
   DocNode *minnode = DocTreeIterator_Current(minit);
-  //printf("minit %d %f\n", minit->docId, minit->score);  
+  
+  //printf("minit %d %f, second %d\n", minnode->docId, minnode->score, minnode2 ? minnode2->docId : -1);  
   DocNode *next = DocTreeIterator_Next(minit);
   
-  while (next) {
+//   while (next) {
      
-     if (next && numericFilter_Match(it->filter, next->score)) {
-       break;
-     }
-     next = DocTreeIterator_Next(minit);
-  } 
+//      if (numericFilter_Match(it->filter, next->score)) {
+//          //printf("found next match: %d %f\n", next->docId, next->score);
+//        break;
+//      } 
+//      next = DocTreeIterator_Next(minit);
+//   } 
   
   if (next) {
     heap_offerx(pq, minit);
@@ -392,6 +394,6 @@ DocNode *__numericIterator_Next(NumericIterator *it) {
     free(minit->stack);
     free(minit);
   }
-  ////printf("returning %d\n", minit->docId);
+  //printf("returning %d\n", minnode ? minnode->docId : -1);
   return minnode;
 }

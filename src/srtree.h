@@ -16,19 +16,21 @@ typedef struct docNode {
   int size;
   struct docNode *left;
   struct docNode *right;
-  
 } DocNode;
 
 typedef struct {
   DocNode *current;
+  
   int state;
 } doctreeIterState;
 
 typedef struct {
   doctreeIterState *stack;
+  t_docId currentDocId;
   size_t top;
   size_t cap;
 } DocTreeIterator;
+
 DocTreeIterator *DocTree_Iterate(DocNode *n);
 void dti_push(DocTreeIterator*dti, DocNode *n);
 DocNode *DocTreeIterator_Next(DocTreeIterator *it);

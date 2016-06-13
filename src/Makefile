@@ -12,7 +12,7 @@ else
 	SHOBJ_LDFLAGS ?= -bundle -undefined dynamic_lookup
 endif
 CFLAGS= -fPIC -lc -lm -std=gnu99 -I./ 
-RELEASEFLAGS=-O3
+RELEASEFLAGS=-O3 -g
 DEBUGFLAGS=-O0 -g 
 VARINT=varint.o buffer.o
 TEXT=tokenize.o stemmer.o dep/snowball/libstemmer.o
