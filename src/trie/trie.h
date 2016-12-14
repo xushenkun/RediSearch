@@ -7,12 +7,16 @@
 
 typedef u_int8_t t_len;
 
-/* Internally, the trie works with 16/32 bit "Runes", i.e. fixed with unicode
+/* Internally, the trie works with 8/16/32 bit "Runes", i.e. fixed with unicode
  * characters. 16 bit shuold be fine for most use cases */
 #ifdef TRIE_32BIT_RUNES
     typedef u_int32_t rune;
     #define TRIE_RUNE_MASK 0xffffffff
-#else // default - 16 bit runes
+#elseif TRIE_8BIT_RUNES
+  typedef u_int8_t rune;
+  #define TRIE_RUNE_MASK 0x000000ff
+#else 
+    // default - 16 bit runes
     typedef u_int16_t rune;
     #define TRIE_RUNE_MASK 0x0000ffff
 #endif

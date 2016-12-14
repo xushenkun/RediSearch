@@ -5,10 +5,19 @@
 #include "../rmutil/strings.h"
 #include "../util/heap.h"
 #include "trie_type.h"
+#include "trie.h"
 #include "../dep/libnu/libnu.h"
 
-/* Convert a utf-8 string to constant width runes */
+/* Convert a utf-8 string to constant width runes. If TRIE_8BIT_RUNES is
+ * defined, we just return the original string copied. This is done to maintain
+ * compatibility with code regardless of width */
 rune *__strToRunes(char *str, size_t *len) {
+
+#ifdef TRIE_8BIT_RUNES
+  /* for 8 bit runs we just copy the string, so freeing it won't cause problems
+   */
+  return (rune *)strndup(str, *len);
+#endif
 
   ssize_t rlen = nu_strlen(str, nu_utf8_read);
   uint32_t decoded[sizeof(uint32_t) * (rlen + 1)];
@@ -25,9 +34,15 @@ rune *__strToRunes(char *str, size_t *len) {
   return ret;
 }
 
+
 /* Convert a rune string to utf-8 characters */
 char *__runesToStr(rune *in, size_t len, size_t *utflen) {
 
+ #ifdef TRIE_8BIT_RUNES
+  /* for 8 bit runs we just copy the string, so freeing it won't cause problems */
+  *utflen = len;
+  return strndup((char *)in, len);
+#endif
   uint32_t unicode[len + 1];
   for (int i = 0; i < len; i++) {
     unicode[i] = (uint32_t)in[i] & 0x0000ffff;

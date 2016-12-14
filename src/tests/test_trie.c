@@ -1,4 +1,5 @@
 #include "../trie/trie.h"
+#include "../trie/trie_type.h"
 #include "../trie/levenshtein.h"
 #include <stdio.h>
 #include <string.h>
@@ -83,6 +84,16 @@ int __trie_add(TrieNode **n, char *str, float sc, TrieAddOp op) {
    return rc;
 }
 
+int example() {
+  Trie *t = NewTrie();
+  char *strings[] = {"SPO:Roi:Visit:Japan", "SPO:Roi:Visit:Georgia", NULL };
+
+  for (int i = 0; strings[i] != NULL; i++) {
+    Trie_InsertStringBuffer(t, strings[i], strlen(strings[i]), 1, 0);
+  }
+
+  TrieIterator it = TrieNode_Iterate(t->root, NULL
+}
 
 int testTrie() {
   TrieNode *root = __newTrieNode(__strToRunes("", NULL), 0, 0, 0, 1, 0);
