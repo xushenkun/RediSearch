@@ -32,7 +32,7 @@ IndexWriter *Redis_OpenWriter(RedisSearchCtx *ctx, const char *term, size_t len)
   RedisModule_FreeString(ctx->redisCtx, termKey);
   // Open the skip index writer
   termKey = fmtRedisSkipIndexKey(ctx, term, len);
-  Buffer *sb = NewRedisBuffer(ctx->redisCtx, termKey, BUFFER_WRITE);
+  Buffer *sb = NewRedisBuffer(ctx->redisCtx, termKey, BUFFER_WRITE | BUFFER_LAZY_ALLOC);
   BufferWriter skw = {
       sb, redisWriterWrite, redisWriterTruncate, RedisBufferFree,
   };
@@ -48,8 +48,9 @@ IndexWriter *Redis_OpenWriter(RedisSearchCtx *ctx, const char *term, size_t len)
   termKey = fmtRedisScoreIndexKey(ctx, term, len);
 
   // Open the score index writer
-  ScoreIndexWriter scw =
-      NewScoreIndexWriter(NewRedisWriter(ctx->redisCtx, fmtRedisScoreIndexKey(ctx, term, len)));
+  ScoreIndexWriter scw;
+  //     NewScoreIndexWriter(NewRedisWriter(ctx->redisCtx, fmtRedisScoreIndexKey(ctx, term, len)));
+
   RedisModule_FreeString(ctx->redisCtx, termKey);
   IndexWriter *w = NewIndexWriterBuf(bw, skw, scw);
   return w;
@@ -59,7 +60,7 @@ void Redis_CloseWriter(IndexWriter *w) {
   IW_Close(w);
   RedisBufferFree(w->bw.buf);
   RedisBufferFree(w->skipIndexWriter.buf);
-  RedisBufferFree(w->scoreWriter.bw.buf);
+  // RedisBufferFree(w->scoreWriter.bw.buf);
   free(w);
 }
 

@@ -9,8 +9,8 @@
 
 // SkipEntry represents a single entry in a skip index
 typedef struct {
-    t_docId docId;
-    t_offset offset;
+  t_docId docId;
+  t_offset offset;
 } SkipEntry;
 
 /*
@@ -21,8 +21,8 @@ SkipIndexes are saved on separate redis keys for each word, and loaded only
 during intersect queries.
 */
 typedef struct {
-    u_int len;
-    SkipEntry *entries;
+  u_int len;
+  SkipEntry *entries;
 } SkipIndex;
 
 /*

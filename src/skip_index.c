@@ -19,15 +19,14 @@ void SkipIndex_Free(SkipIndex *si) {
 }
 
 inline int si_isPos(SkipIndex *idx, u_int i, t_docId docId) {
-  if (idx->entries[i].docId < docId &&
-      (i < idx->len - 1 && idx->entries[i + 1].docId >= docId)) {
+  if (idx->entries[i].docId < docId && (i < idx->len - 1 && idx->entries[i + 1].docId >= docId)) {
     return 1;
   }
   return 0;
 }
 
 inline SkipEntry *SkipIndex_Find(SkipIndex *idx, t_docId docId, u_int *offset) {
-  if (idx == NULL || idx->len == 0 || docId < idx->entries[0].docId) {
+  if (idx == NULL || idx->len == 0 || docId < idx->entries[*offset].docId) {
     return NULL;
   }
   if (docId > idx->entries[idx->len - 1].docId) {
