@@ -56,7 +56,7 @@ size_t __writeEntry(BufferWriter *bw, IndexFlags idxflags, t_docId docId, uint8_
 
   // ret += WriteVarint(len, &w->bw);
   // encode freq
-  printf("writing freq %d\n", freq);
+  //printf("writing freq %d\n", freq);
   ret += WriteVarint(freq, bw);
 
   if (idxflags & Index_StoreFieldFlags) {
@@ -98,7 +98,7 @@ size_t InvertedIndex_WriteEntry(InvertedIndex *idx,                             
   // freq is between 0 and 1
   // int quantizedScore =
   //     floorl(ent->freq * ent->docScore * (double)FREQ_QUANTIZE_FACTOR);
-  printf("writing entry freq: %d\n", ent->freq);
+  
   ret = __writeEntry(&bw, idx->flags, ent->docId - blk->lastId, ent->flags, ent->freq, offsets->offset,
                      offsets);
 
@@ -134,7 +134,7 @@ inline size_t __readEntry(BufferReader *br, IndexFlags idxflags, t_docId lastId,
   // printf("IR %s read docId %d, last id %d\n", ir->term->str, *docId,
   // ir->lastId);
   *freq = ReadVarint(br);
-
+  
   if (idxflags & Index_StoreFieldFlags) {
     Buffer_ReadByte(br, (char *)flags);
   } else {

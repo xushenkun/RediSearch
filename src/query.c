@@ -386,32 +386,36 @@ void Query_Free(Query *q) {
 static int cmpHits(const void *e1, const void *e2, const void *udata) {
   const IndexResult *h1 = e1, *h2 = e2;
 
-  if (h1->totalTF < h2->totalTF) {
+  if (h1->finalScore < h2->finalScore) {
     return 1;
-  } else if (h1->totalTF > h2->totalTF) {
+  } else if (h1->finalScore > h2->finalScore) {
     return -1;
   }
   return h1->docId - h2->docId;
 }
 
-/* Factor document score (and TBD - other factors) in the hit's score.
-This is done only for the root iterator */
+/* Calculate sum(TF-IDF)*document score for each result */
 double CalculateResultScore(DocumentMetadata *dmd, IndexResult *h) {
+  if (dmd->score == 0) return 0;
   // IndexResult_Print(h);
   if (h->numRecords == 1) {
     return dmd->score * (float)h->totalTF / (float)dmd->maxFreq;
+    // printf("dmd score: %f, dmd maxFreq: %d, tfidf: %f, tifidf normalized: %f\n",
+    // dmd->score, dmd->maxFreq, ret, ret);
   }
 
-  double _tfidf = 0;
+  double tfidf = 0;
   for (int i = 0; i < h->numRecords; i++) {
-    _tfidf += (float)h->records[i].tf * (h->records[i].term ? h->records[i].term->idf : 0);
+    tfidf += (float)h->records[i].tf * (h->records[i].term ? h->records[i].term->idf : 0);
   }
-  double tfidf = _tfidf*dmd->score/dmd->maxFreq;
-  printf("dmd score: %f, dmd maxFreq: %d, tfidf: %f, tifidf normalized: %f\n", 
-    dmd->score, dmd->maxFreq, _tfidf, tfidf );
+  tfidf *= dmd->score / dmd->maxFreq;
+  // printf("dmd score: %f, dmd maxFreq: %d, tfidf: %f, tifidf normalized: %f\n", dmd->score,
+  //        dmd->maxFreq, _tfidf, tfidf);
 
-  int md = IndexResult_MinOffsetDelta(h);
-  return tfidf / (double)(md);
+  tfidf /= (double)IndexResult_MinOffsetDelta(h);
+
+  // printf("after normalize: %f\n", tfidf);
+  return tfidf;
 }
 
 QueryResult *Query_Execute(Query *query) {
@@ -467,8 +471,8 @@ QueryResult *Query_Execute(Query *query) {
     }
 
     // IndexResult_Print(h);
-    h->totalTF = CalculateResultScore(dmd, h);
-
+    h->finalScore = CalculateResultScore(dmd, h);
+    printf("total score: %f\n", h->finalScore);
     if (heap_count(pq) < heap_size(pq)) {
       heap_offerx(pq, h);
       pooledHit = NULL;
@@ -477,13 +481,13 @@ QueryResult *Query_Execute(Query *query) {
         minScore = minh->totalTF;
       }
     } else {
-      if (h->totalTF >= minScore) {
+      if (h->finalScore >= minScore) {
         pooledHit = heap_poll(pq);
         heap_offerx(pq, h);
 
         // get the new min score
         IndexResult *minh = heap_peek(pq);
-        minScore = minh->totalTF;
+        minScore = minh->finalScore;
       } else {
         pooledHit = h;
       }
@@ -508,7 +512,7 @@ QueryResult *Query_Execute(Query *query) {
     // LG_DEBUG("Popping %d freq %f\n", h->docId, h->totalFreq);
     DocumentMetadata *dmd = DocTable_Get(&query->ctx->spec->docs, h->docId);
     if (dmd) {
-      res->results[n - i - 1] = (ResultEntry){dmd->key, h->totalTF, dmd->payload};
+      res->results[n - i - 1] = (ResultEntry){dmd->key, h->finalScore, dmd->payload};
     }
     IndexResult_Free(h);
 
@@ -575,6 +579,7 @@ int __queryResult_serializeFullResults(QueryResult *r, RedisSearchCtx *sctx, int
     // if needed - send the score as well
     if (withscores) {
       ++len;
+      printf("serializing score %f\n", r->results[i].score);
       RedisModule_ReplyWithDouble(ctx, r->results[i].score);
     }
 

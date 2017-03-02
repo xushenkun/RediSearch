@@ -28,6 +28,7 @@ typedef struct {
 
 typedef struct {
   t_docId docId;
+  double finalScore;
   uint32_t totalTF;
   u_char flags;
   int numRecords;
