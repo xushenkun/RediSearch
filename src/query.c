@@ -1,6 +1,3 @@
-#include <assert.h>
-#include <ctype.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -402,13 +399,16 @@ This is done only for the root iterator */
 double CalculateResultScore(DocumentMetadata *dmd, IndexResult *h) {
   // IndexResult_Print(h);
   if (h->numRecords == 1) {
-    return h->totalTF;
+    return dmd->score * (float)h->totalTF / (float)dmd->maxFreq;
   }
 
-  double tfidf = 0;
+  double _tfidf = 0;
   for (int i = 0; i < h->numRecords; i++) {
-    tfidf += h->records[i].tf * (h->records[i].term ? h->records[i].term->idf : 0);
+    _tfidf += (float)h->records[i].tf * (h->records[i].term ? h->records[i].term->idf : 0);
   }
+  double tfidf = _tfidf*dmd->score/dmd->maxFreq;
+  printf("dmd score: %f, dmd maxFreq: %d, tfidf: %f, tifidf normalized: %f\n", 
+    dmd->score, dmd->maxFreq, _tfidf, tfidf );
 
   int md = IndexResult_MinOffsetDelta(h);
   return tfidf / (double)(md);

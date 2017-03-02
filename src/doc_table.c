@@ -62,8 +62,9 @@ t_docId DocTable_Put(DocTable *t, const char *key, double score, u_char flags, c
     t->memsize += payloadSize + sizeof(DocumentPayload);
   }
 
-  t->docs[docId] =
-      (DocumentMetadata){.key = rm_strdup(key), .score = score, .flags = flags, .payload = dpl};
+
+  t->docs[docId] = (DocumentMetadata){
+      .key = rm_strdup(key), .score = score, .flags = flags, .payload = dpl, .maxFreq = 1};
   ++t->size;
   t->memsize += sizeof(DocumentMetadata) + strlen(key);
   DocIdMap_Put(&t->dim, key, docId);

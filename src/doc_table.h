@@ -23,6 +23,7 @@ typedef struct {
 typedef struct {
   char *key;
   float score;
+  uint32_t maxFreq;
   u_char flags;
   DocumentPayload *payload;
 } DocumentMetadata;
