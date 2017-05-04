@@ -15,7 +15,8 @@ RedisModuleType *IndexSpecType;
 */
 inline FieldSpec *IndexSpec_GetField(IndexSpec *spec, const char *name, size_t len) {
   for (int i = 0; i < spec->numFields; i++) {
-    if (!strncmp(spec->fields[i].name, name, len)) {
+    if (len != strlen(spec->fields[i].name)) continue;
+    if (!strncasecmp(spec->fields[i].name, name, len)) {
       return &spec->fields[i];
     }
   }
@@ -238,7 +239,8 @@ void IndexSpec_Free(void *ctx) {
   }
   rm_free(spec->name);
   if (spec->sortables) {
-    rm_free(spec->sortables);
+    SortingTable_Free(spec->sortables);
+    spec->sortables = NULL;
   }
   rm_free(spec);
 }
@@ -344,7 +346,7 @@ void *IndexSpec_RdbLoad(RedisModuleIO *rdb, int encver) {
   IndexSpec *sp = rm_malloc(sizeof(IndexSpec));
   sp->terms = NULL;
   sp->docs = NewDocTable(1000);
-
+  sp->sortables = NULL;
   sp->name = RedisModule_LoadStringBuffer(rdb, NULL);
   sp->flags = (IndexFlags)RedisModule_LoadUnsigned(rdb);
 
