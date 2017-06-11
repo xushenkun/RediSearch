@@ -35,6 +35,7 @@ void ReadIterator_Free(IndexIterator *it);
 typedef struct {
   IndexIterator **its;
   t_docId *docIds;
+  int *rcs;
   int num;
   int pos;
   size_t len;
@@ -60,6 +61,7 @@ t_docId UI_LastDocId(void *ctx);
 typedef struct {
   IndexIterator **its;
   t_docId *docIds;
+  int *rcs;
   RSIndexResult *current;
   int num;
   size_t len;

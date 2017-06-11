@@ -19,6 +19,8 @@ IndexIterator *NewUnionIterator(IndexIterator **its, int num, DocTable *dt) {
   ctx->docTable = dt;
   ctx->atEnd = 0;
   ctx->docIds = calloc(num, sizeof(t_docId));
+  ctx->rcs = calloc(num, sizeof(int));
+  memset(ctx->rcs, INDEXREAD_OK, num * sizeof(int));
   ctx->current = NewUnionResult(num);
   ctx->len = 0;
   // bind the union iterator calls
@@ -58,9 +60,10 @@ int UI_Read(void *ctx, RSIndexResult **hit) {
     for (int i = 0; i < ui->num; i++) {
       IndexIterator *it = ui->its[i];
       if (it == NULL) continue;
+
       RSIndexResult *res = it->Current(it->ctx);
 
-      rc = INDEXREAD_OK;
+      rc = ui->rcs[i];
       // if this hit is behind the min id - read the next entry
       // printf("ui->docIds[%d]: %d, ui->minDocId: %d\n", i, ui->docIds[i], ui->minDocId);
       while (ui->docIds[i] <= ui->minDocId && rc != INDEXREAD_EOF) {
@@ -70,6 +73,7 @@ int UI_Read(void *ctx, RSIndexResult **hit) {
           rc = it->Read(it->ctx, &res);
           ui->docIds[i] = res->docId;
         }
+        ui->rcs[i] = rc;
       }
 
       if (rc != INDEXREAD_EOF) {
@@ -141,7 +145,7 @@ int UI_SkipTo(void *ctx, u_int32_t docId, RSIndexResult **hit) {
     // this happens for non existent words
     IndexIterator *it = ui->its[i];
     if (it == NULL) continue;
-
+    rc = ui->rcs[i];
     RSIndexResult *res = it->Current(it->ctx);
 
     if (ui->docIds[i] < docId || docId == 0) {
@@ -150,14 +154,22 @@ int UI_SkipTo(void *ctx, u_int32_t docId, RSIndexResult **hit) {
         continue;
       }
       ui->docIds[i] = res->docId;
+      ui->rcs[i] = rc;
 
     } else {
-      rc = (ui->docIds[i] == docId) ? INDEXREAD_OK : INDEXREAD_NOTFOUND;
+
+      if (ui->docIds[i] == docId && ui->rcs[i] == INDEXREAD_OK) {
+        rc = INDEXREAD_OK;
+      } else {
+        rc = INDEXREAD_NOTFOUND;
+      }
     }
 
     if (ui->docIds[i] && rc != INDEXREAD_EOF) {
       minDocId = MIN(ui->docIds[i], minDocId);
     }
+
+    ui->rcs[i] = rc;
 
     // we found a hit - continue to all results matching the same docId
     if (rc == INDEXREAD_OK) {
@@ -247,6 +259,9 @@ IndexIterator *NewIntersecIterator(IndexIterator **its, int num, DocTable *dt,
   ctx->fieldMask = fieldMask;
   ctx->atEnd = 0;
   ctx->docIds = calloc(num, sizeof(t_docId));
+  ctx->rcs = calloc(num, sizeof(int));
+  memset(ctx->rcs, INDEXREAD_EOF, num * sizeof(int));
+
   ctx->current = NewIntersectResult(num);
   ctx->docTable = dt;
 
@@ -280,12 +295,13 @@ int II_SkipTo(void *ctx, u_int32_t docId, RSIndexResult **hit) {
   int rc = INDEXREAD_EOF;
   // skip all iterators to docId
   for (int i = 0; i < ic->num; i++) {
+    rc = ic->rcs[i];
+    printf("cached rc: %d\n", rc);
     IndexIterator *it = ic->its[i];
 
     if (!it) return INDEXREAD_EOF;
 
     RSIndexResult *res = it->Current(it->ctx);
-    rc = INDEXREAD_OK;
 
     // only read if we're not already at the final position
     if (ic->docIds[i] != ic->lastDocId || ic->lastDocId == 0) {
@@ -293,6 +309,7 @@ int II_SkipTo(void *ctx, u_int32_t docId, RSIndexResult **hit) {
       if (rc != INDEXREAD_EOF) {
         ic->docIds[i] = res->docId;
       }
+      ic->rcs[i] = rc;
     }
 
     if (rc == INDEXREAD_EOF) {
@@ -351,7 +368,9 @@ int II_Read(void *ctx, RSIndexResult **hit) {
 
       RSIndexResult *h = it->Current(it->ctx);
       // skip to the next
-      int rc = INDEXREAD_OK;
+      int rc = ic->rcs[i];
+
+      printf("READ: Cached rc %d, cached docId %d\n", rc, ic->docIds[i]);
       if (ic->docIds[i] != ic->lastDocId || ic->lastDocId == 0) {
 
         if (i == 0 && ic->docIds[i] >= ic->lastDocId) {
@@ -359,11 +378,11 @@ int II_Read(void *ctx, RSIndexResult **hit) {
         } else {
           rc = it->SkipTo(it->ctx, ic->lastDocId, &h);
         }
-        // printf("II %p last docId %d, it %d read docId %d(%d), rc %d\n", ic, ic->lastDocId, i,
-        //        h->docId, it->LastDocId(it->ctx), rc);
-
-        if (rc == INDEXREAD_EOF) goto eof;
+        printf("II READ %p last docId %d, it %d read docId %d(%d), rc %d\n", ic, ic->lastDocId, i,
+               h->docId, it->LastDocId(it->ctx), rc);
+        ic->rcs[i] = rc;
         ic->docIds[i] = h->docId;
+        if (rc == INDEXREAD_EOF) goto eof;
       }
 
       if (ic->docIds[i] > ic->lastDocId) {
@@ -377,6 +396,8 @@ int II_Read(void *ctx, RSIndexResult **hit) {
         ic->lastDocId++;
       }
     }
+
+    // printf("")
 
     if (nh == ic->num) {
       // printf("II %p HIT @ %d\n", ic, ic->current->docId);

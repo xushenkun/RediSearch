@@ -674,7 +674,7 @@ static int sortByCmp(const void *e1, const void *e2, const void *udata) {
 }
 
 QueryResult *Query_Execute(Query *query) {
-  //__queryNode_Print(query, query->root, 0);
+  __queryNode_Print(query, query->root, 0);
   QueryResult *res = malloc(sizeof(QueryResult));
   res->error = 0;
   res->errorString = NULL;
@@ -716,6 +716,7 @@ QueryResult *Query_Execute(Query *query) {
 
     int rc = it->Read(it->ctx, &r);
 
+    if (r) printf("QQ: Read docId %d, rc: %d\n", r->docId, rc);
     if (rc == INDEXREAD_EOF) {
       break;
     } else if (rc == INDEXREAD_NOTFOUND) {
