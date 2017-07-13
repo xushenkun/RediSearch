@@ -73,6 +73,7 @@ typedef struct {
   const char *id;
   double score;
   RSPayload *payload;
+  RSSortableValue *sortKey;
 } ResultEntry;
 
 /* QueryResult represents the final processed result of a query execution */
@@ -85,7 +86,7 @@ typedef struct queryResult {
 } QueryResult;
 
 /* Serialize a query result to the redis client. Returns REDISMODULE_OK/ERR */
-int QueryResult_Serialize(QueryResult *r, RedisSearchCtx *ctx, RSSearchFlags flags);
+int QueryResult_Serialize(QueryResult *r, RedisSearchCtx *ctx, RSSearchRequest *req);
 
 /* Evaluate a query stage and prepare it for execution. As execution is lazy
 this doesn't
@@ -110,6 +111,9 @@ void Query_SetIdFilter(Query *q, IdFilter *f);
 /* Return a string representation of the query parse tree. The string should be freed by the caller
  */
 const char *Query_DumpExplain(Query *q);
+
+/* Only used in tests, for now */
+void QueryNode_Print(Query *q, QueryNode *qs, int depth);
 
 #define QUERY_ERROR_INTERNAL_STR "Internal error processing query"
 #define QUERY_ERROR_INTERNAL -1

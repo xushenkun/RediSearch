@@ -224,11 +224,12 @@ Array Response. A nested array of keys and values.
 ### Format
 
 ```
-FT.SEARCH {index} {query} [NOCONTENT] [VERBATIM] [NOSTOPWORDS] [WITHSCORES] [WITHPAYLOADS]
+FT.SEARCH {index} {query} [NOCONTENT] [VERBATIM] [NOSTOPWORDS] [WITHSCORES] [WITHPAYLOADS] [WITHSORTKEYS]
   [FILTER {numeric_field} {min} {max}] ...
   [GEOFILTER {geo_field} {lon} {lat} {raius} m|km|mi|ft]
   [INKEYS {num} {key} ... ]
-  [INFIELDS {num {field} ... ]
+  [INFIELDS {num} {field} ... ]
+  [RETURN {num} {field} ... ]
   [SLOP {slop}] [INORDER]
   [LANGUAGE {language}]
   [EXPANDER {expander}]
@@ -249,6 +250,8 @@ Search the index with a textual query, returning either documents or just ids.
   See below for documentation on query syntax. 
 - **NOCONTENT**: If it appears after the query, we only return the document ids and not 
   the content. This is useful if rediseach is only an index on an external document collection
+- **RETURN {num} {field} ...**: Use this keyword to limit which fields from the document are returned.
+  `num` is the number of fields following the keyword. If `num` is 0, it acts like `NOCONTENT`.
 - **LIMIT first num**: If the parameters appear after the query, we limit the results to 
   the offset and number of results given. The default is 0 10
 - **INFIELDS {num} {field} ...**: If set, filter the results to ones appearing only in specific
@@ -267,6 +270,7 @@ Search the index with a textual query, returning either documents or just ids.
 - **NOSTOPWORDS**: If set, we do not filter stopwords from the query. 
 - **WITHSCORES**: If set, we also return the relative internal score of each document. this can be
   used to merge results from multiple instances
+- **WITHSORTKEYS**: Only relevant in conjunction with **SORTBY**. Returns the value of the sorting key, right after the id and score and /or payload if requested. This is usually not needed by users, and exists for distributed search coordination purposes.
 - **VERBATIM**: if set, we do not try to use stemming for query expansion but search the query terms verbatim.
 - **LANGUAGE {language}**: If set, we use a stemmer for the supplied langauge during search for query expansion. 
   Defaults to English. If an unsupported language is sent, the command returns an error. See FT.ADD for the list of languages.
@@ -434,7 +438,7 @@ Integer Reply - the number of index entries optimized.
 ### Format
 
 ```
-FT.SUGADD {key} {string} {score} [INCR]
+FT.SUGADD {key} {string} {score} [INCR] [PAYLOAD {payload}]
 ```
 
 ### Description
@@ -448,6 +452,7 @@ index definitions, and leaves creating and updating suggestino dictionaries to t
 - **string**: the suggestion string we index
 - **score**: a floating point number of the suggestion string's weight
 - **INCR**: if set, we increment the existing entry of the suggestion by the given score, instead of replacing the score. This is useful for updating the dictionary based on user queries in real time
+- **PAYLOAD {payload}**: If set, we save an extra payload with the suggestion, that can be fetched by adding the `WITHPAYLOADS` argument to `FT.SUGGET`.
 
 ### Returns:
 
@@ -460,7 +465,7 @@ Integer Reply: the current size of the suggestion dictionary.
 ### Format
 
 ```
-FT.SUGGET {key} {prefix} [FUZZY] [MAX num]
+FT.SUGGET {key} {prefix} [FUZZY] [WITHPAYLOADS] [MAX num]
 ```
 
 ### Description
@@ -473,8 +478,8 @@ Get completion suggestions for a prefix
 - **prefix**: the prefix to complete on
 - **FUZZY**: if set,we do a fuzzy prefix search, including prefixes at levenshtein distance of 1 from the prefix sent
 - **MAX num**: If set, we limit the results to a maximum of `num`. (**Note**: The default is 5, and the number cannot be greater than 10).
-- **WITHSCORES**: If set, we also return the score of each suggestion. this can be
-  used to merge results from multiple instances
+- **WITHSCORES**: If set, we also return the score of each suggestion. this can be used to merge results from multiple instances
+- **WITHPAYLOADS**: If set, we return optional payloads saved along with the suggestions. If no payload is present for an entry, we return a Null Reply.
 
 ### Returns:
 

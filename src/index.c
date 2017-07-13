@@ -4,6 +4,10 @@
 #include "spec.h"
 #include <math.h>
 #include <assert.h>
+#include <limits.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 #include <sys/param.h>
 #include "rmalloc.h"
 
@@ -39,7 +43,7 @@ RSIndexResult *UI_Current(void *ctx) {
   return ((UnionContext *)ctx)->current;
 }
 
-int UI_Read(void *ctx, RSIndexResult **hit) {
+inline int UI_Read(void *ctx, RSIndexResult **hit) {
   UnionContext *ui = ctx;
   // nothing to do
   if (ui->num == 0 || ui->atEnd) {
@@ -51,6 +55,7 @@ int UI_Read(void *ctx, RSIndexResult **hit) {
   AggregateResult_Reset(ui->current);
 
   do {
+
     // find the minimal iterator
     t_docId minDocId = __UINT32_MAX__;
     int minIdx = -1;
@@ -58,7 +63,7 @@ int UI_Read(void *ctx, RSIndexResult **hit) {
     int rc = INDEXREAD_EOF;
     for (int i = 0; i < ui->num; i++) {
       IndexIterator *it = ui->its[i];
-      if (it == NULL) continue;
+      if (it == NULL || !it->HasNext(it->ctx)) continue;
       RSIndexResult *res = it->Current(it->ctx);
 
       rc = INDEXREAD_OK;
@@ -75,6 +80,8 @@ int UI_Read(void *ctx, RSIndexResult **hit) {
 
       if (rc != INDEXREAD_EOF) {
         numActive++;
+      } else {
+        continue;
       }
 
       if (rc == INDEXREAD_OK && res->docId <= minDocId) {
@@ -134,12 +141,6 @@ int UI_SkipTo(void *ctx, uint32_t docId, RSIndexResult **hit) {
   }
 
   AggregateResult_Reset(ui->current);
-  if (docId < ui->minDocId) {
-    ui->current->docId = ui->minDocId;
-    *hit = ui->current;
-    return INDEXREAD_NOTFOUND;
-  }
-
   int numActive = 0;
   int found = 0;
   int rc = INDEXREAD_EOF;
@@ -152,6 +153,7 @@ int UI_SkipTo(void *ctx, uint32_t docId, RSIndexResult **hit) {
   for (int i = 0; i < num; i++) {
     // this happens for non existent words
     if (NULL == (it = ui->its[i])) continue;
+    if (!it->HasNext(it->ctx)) continue;
 
     res = NULL;
 
@@ -164,6 +166,7 @@ int UI_SkipTo(void *ctx, uint32_t docId, RSIndexResult **hit) {
       ui->docIds[i] = res->docId;
 
     } else {
+      // if the iterator is at an end - we avoid reading the entry
       // in this case, we are either past or at the requested docId, no need to actually read
       rc = (ui->docIds[i] == docId) ? INDEXREAD_OK : INDEXREAD_NOTFOUND;
     }
@@ -209,8 +212,6 @@ int UI_SkipTo(void *ctx, uint32_t docId, RSIndexResult **hit) {
 
   // not found...
   ui->minDocId = minDocId;
-  AggregateResult_Reset((*hit));
-  // printf("UI %p skipped to docId %d NOT FOUND, minDocId now %d\n", ui, docId, ui->minDocId);
   return INDEXREAD_NOTFOUND;
 }
 
@@ -299,7 +300,7 @@ int II_SkipTo(void *ctx, uint32_t docId, RSIndexResult **hit) {
   for (int i = 0; i < ic->num; i++) {
     IndexIterator *it = ic->its[i];
 
-    if (!it) return INDEXREAD_EOF;
+    if (!it || !it->HasNext(it->ctx)) return INDEXREAD_EOF;
 
     RSIndexResult *res = it->Current(it->ctx);
     rc = INDEXREAD_OK;
